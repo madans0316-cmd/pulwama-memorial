@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#000000">
+    <title>Pulwama National Memorial</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700;900&display=swap" rel="stylesheet">
+
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Marker Cluster CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.5.3/dist/MarkerCluster.Default.css" />
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Marker Cluster JS -->
+    <script src="https://unpkg.com/leaflet.markercluster@1.5.3/dist/leaflet.markercluster.js"></script>
+
+    <style>
+        /* Optimization for Mobile Smooth Layout */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            width: 100%;
+            overflow-x: hidden;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        img,
+        video {
+            max-width: 100%;
+            height: auto;
+            display: block;
+        }
+
+        .section {
+            width: 100%;
+            padding: 60px 15px;
+        }
+
+        /* Base Body Style */
+        body {
+            background: black;
+            color: white;
+            font-family: 'Montserrat', sans-serif;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+        }
+
+        .custom-marker {
+            background: #ff4c4c;
+            border-radius: 50%;
+            width: 15px;
+            height: 15px;
+            box-shadow: 0 0 15px #ff4c4c;
+        }
+
+        /* Section styling defaults overwritten by above but keeping transition logic */
+        /* .section logic merged above but keeping animation specific properties */
+        .section {
+            /* padding: 100px 20px; -> handled by new css */
+            text-align: center;
+            opacity: 0;
+            transform: translateY(40px);
+            transition: 1.2s;
+        }
+
+        .section.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Counter */
+        .counter {
+            font-size: 90px;
+            font-weight: 900;
+            color: #ff4c4c;
+        }
+
+        /* Honour cards */
+        /* Honour cards Grid Layout */
+        #scroll-behavior {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            max-width: 1200px;
+            /* Constrain width on large screens */
+            margin: 0 auto;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            /* Slightly more opaque background */
+            margin: 0;
+            /* Remove auto margin */
+            padding: 20px;
+            border-radius: 12px;
+            width: auto;
+            /* Allow grid to control width */
+            max-width: none;
+            border-left: 4px solid #ff9933;
+            /* Saffron */
+            border-right: 4px solid #138808;
+            /* Green */
+            position: relative;
+            transition: transform 0.3s ease, background 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+            display: flex;
+            /* Centering content within card if needed */
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 1.1rem;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .card::before {
+            content: "🕯️";
+            /* Using emoji directly */
+            position: absolute;
+            left: 10px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.5rem;
+        }
+
+        /* Search */
+        /* Search */
+        .search-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin: 20px auto;
+            width: 80%;
+            max-width: 600px;
+        }
+
+        #search {
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            border: none;
+            text-align: center;
+        }
+
+        #refresh-btn {
+            padding: 10px 15px;
+            border-radius: 8px;
+            border: none;
+            background: #ff9933;
+            color: white;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: transform 0.2s;
+        }
+
+        #refresh-btn:hover {
+            transform: scale(1.1);
+            background: #e68a00;
+        }
+
+        /* Ending */
+        #ending {
+            font-size: 50px;
+            padding: 120px 20px;
+            background: black;
+        }
+
+        footer {
+            padding: 20px;
+            text-align: center;
+            color: #555;
+        }
+
+        /* Hero Section adjustments */
+        /* Audio Control Button */
+        #audio-control {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            padding: 10px 15px;
+            border-radius: 50px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        #audio-control:hover {
+            background: rgba(255, 255, 255, 0.4);
+        }
+
+        .hero {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.9)),
+                url('bg.jpg') no-repeat center center/cover fixed;
+            position: relative;
+        }
+
+        /* Swipe Up Instruction */
+        .swipe-instruction {
+            position: absolute;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            animation: float 2s infinite ease-in-out;
+            opacity: 0.9;
+            cursor: pointer;
+        }
+
+        .swipe-instruction p {
+            margin: 0;
+            font-size: 12px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: #ccc;
+            margin-bottom: 5px;
+        }
+
+        .swipe-instruction .arrow {
+            font-size: 24px;
+            display: block;
+            color: #ff9933;
+            /* Saffron touch */
+        }
+
+        @keyframes float {
+
+            0%,
+            100% {
+                transform: translateX(-50%) translateY(0);
+            }
+
+            50% {
+                transform: translateX(-50%) translateY(-15px);
+            }
+        }
+
+        /* Pop-up Animation */
+        @keyframes spin {
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @keyframes popUp {
+            0% {
+                transform: scale(0.5);
+                opacity: 0;
+            }
+
+            70% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        .hero h1 {
+            font-size: 3.5rem;
+            margin: 0;
+            background: linear-gradient(to right, #FF9933, #FFFFFF, #138808);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: popUp 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) forwards;
+        }
+
+        .hero h2 {
+            font-size: 2rem;
+            margin-top: 10px;
+            background: linear-gradient(to right, #FF9933, #FFFFFF, #138808);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            opacity: 0;
+            /* Start invisible */
+            animation: popUp 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) 0.5s forwards;
+        }
+
+        .hero-emblem {
+            width: 100px;
+            margin-top: 30px;
+            opacity: 0;
+            filter: brightness(0) invert(1) drop-shadow(0 0 5px rgba(255, 255, 255, 0.6));
+            /* Silver white */
+            animation: emblemFadeIn 1.5s ease-out 1.5s forwards;
+            /* Delay to appear after text */
+        }
+
+        @keyframes emblemFadeIn {
+            0% {
+                transform: translateY(20px);
+                opacity: 0;
+            }
+
+            100% {
+                transform: translateY(0);
+                opacity: 0.9;
+            }
+        }
+
+        /* Typing Animation for Martyrs Text */
+        .typing-container {
+            display: inline-block;
+        }
+
+        .typing-text {
+            overflow: hidden;
+            /* Ensures the content is not revealed until the animation */
+            border-right: 3px solid #fff;
+            /* The typewriter cursor in white */
+            white-space: nowrap;
+            /* Keeps the content on a single line */
+            margin: 0 auto;
+            /* Gives that scrolling effect as the typing happens */
+            letter-spacing: .15em;
+            /* Adjust as needed */
+            animation:
+                typing 4s steps(22, end) infinite,
+                blink-caret .75s step-end infinite;
+
+            color: #fff;
+            /* Pure White */
+            text-shadow:
+                0 0 5px #fff,
+                0 0 10px #fff,
+                0 0 20px #c0c0c0,
+                /* Silver glow */
+                0 0 30px #b4b4b4;
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: inline-block;
+            max-width: fit-content;
+        }
+
+        /* The typing effect */
+        @keyframes typing {
+            0% {
+                width: 0
+            }
+
+            50% {
+                width: 100%
+            }
+
+            90% {
+                width: 100%
+            }
+
+            100% {
+                width: 0
+            }
+
+            /* Loop it back */
+        }
+
+        /* The typewriter cursor effect */
+        @keyframes blink-caret {
+
+            from,
+            to {
+                border-color: transparent
+            }
+
+            50% {
+                border-color: #fcf6f6;
+            }
+        }
+
+        /* Martyr Count Section Background */
+        #martyr-count {
+            position: relative;
+            background: radial-gradient(circle, rgba(139, 0, 0, 0.4) 0%, rgba(0, 0, 0, 0.9) 70%);
+            /* Red glow fallback */
+            overflow: hidden;
+        }
+
+        #martyr-count::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background: url('soldier_cross.png') no-repeat center center;
+            background-size: contain;
+            opacity: 0.3;
+            /* Subtle background */
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* Responsive Container for Introduction */
+        .responsive-container {
+            max-width: 1200px;
+            margin: auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .responsive-container h1 {
+            font-size: 2.5em;
+            margin-bottom: 0.5em;
+        }
+
+        .responsive-container p {
+            font-size: 1.2em;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        @media (max-width: 768px) {
+            .responsive-container h1 {
+                font-size: 1.8em;
+            }
+
+            .responsive-container p {
+                font-size: 1em;
+            }
+        }
+
+        /* Jai Hind Shining Effect */
+        .shining-text {
+            background: linear-gradient(to right, #4d4d4d 0, #fff 10%, #4d4d4d 20%);
+            background-position: 0;
+            background-size: 200% 100%;
+            /* Wider background for smooth movement */
+            -webkit-background-clip: text;
+            background-clip: text;
+            /* Standard property */
+            -webkit-text-fill-color: transparent;
+            animation: shine 3s infinite linear;
+            font-weight: 900;
+        }
+
+        @keyframes shine {
+            0% {
+                background-position: 200% center;
+            }
+
+            100% {
+                background-position: -200% center;
+            }
+        }
+
+
+
+
+        /* Floating Image Animation */
+        @keyframes floatImage {
+            0% {
+                transform: translateY(0);
+            }
+
+            50% {
+                transform: translateY(-15px);
+            }
+
+            100% {
+                transform: translateY(0);
+            }
+        }
+
+        .floating-img {
+            animation: floatImage 4s ease-in-out infinite;
+        }
+
+        /* Story Text Cursor */
+        #story-text {
+            border-right: 2px solid orange;
+            /* Cursor */
+            display: inline-block;
+            /* Behave like text block */
+        }
+
+        /* Video Hero (User Requested) */
+        .video-hero {
+            position: relative;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .bg-video {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            /* z-index removed to ensure visibility */
+        }
+
+        .video-overlay {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+        }
+
+        .video-overlay h1 {
+            font-size: 60px;
+        }
+
+        .video-overlay p {
+            font-size: 20px;
+        }
+
+        /* Mobile Responsive Overrides */
+        @media (max-width:768px) {
+
+            body {
+                font-size: 14px;
+            }
+
+            .hero {
+                height: 100vh;
+                padding: 20px;
+                text-align: center;
+                background-attachment: scroll !important;
+                /* Keep the jitter fix */
+            }
+
+            .hero h1 {
+                font-size: 28px;
+            }
+
+            .hero h2 {
+                font-size: 18px;
+            }
+
+            .section {
+                padding: 40px 15px;
+            }
+
+            .card {
+                width: 95%;
+                margin: 10px auto;
+                padding: 12px;
+                font-size: 14px;
+            }
+
+            #map {
+                height: 400px !important;
+                width: 100% !important;
+            }
+
+            video {
+                object-fit: cover;
+                width: 100%;
+                height: 100vh;
+            }
+
+            .video-overlay h1 {
+                font-size: 32px;
+            }
+
+            .video-overlay p {
+                font-size: 16px;
+            }
+
+            /* Fix mobile scroll jitter */
+            .hero {
+                background-attachment: scroll !important;
+            }
+        }
+
+        .video-control-btn {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            border-radius: 30px;
+            cursor: pointer;
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            font-size: 1rem;
+            transition: background 0.3s;
+        }
+
+        .video-control-btn:hover {
+            background: rgba(0, 0, 0, 0.8);
+        }
+    </style>
+</head>
+
+<body>
+
+    <audio id="bgm" src="audio.mp3" loop autoplay></audio>
+    <button id="audio-control">🔊 Stop Tribute</button>
+
+    <!-- Hero -->
+    <section class="section visible hero">
+        <h1>14th February 2019</h1>
+        <h2>India’s Black Day</h2>
+
+        <!-- Ashoka Emblem -->
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Ashoka National Emblem"
+            class="hero-emblem">
+
+        <div class="swipe-instruction">
+            <p>Swipe Up</p>
+            <span class="arrow">☝️</span>
+        </div>
+    </section>
+
+    <!-- Welcome / Introduction Section -->
+    <div class="responsive-container section">
+        <h1>Welcome to the Memorial</h1>
+        <p>This website honors those we remember. "Behind every uniform is a story of courage—a soldier stands not for
+            war, but for the peace and freedom they protect."</p>
+    </div>
+
+    <!-- Counter Section -->
+    <section class="section" id="martyr-count">
+        <div class="counter" id="count">0</div>
+        <div class="typing-container">
+            <p class="typing-text">Brave CRPF Martyrs</p>
+        </div>
+    </section>
+
+    <!-- What Happened -->
+    <section class="section" style="max-width: 800px; margin: 0 auto;">
+        <h2>What Happened</h2>
+        <div style="margin: 20px 0;">
+            <img src="memorial.jpg" alt="Pulwama Memorial" class="floating-img"
+                style="max-width: 100%; border-radius: 8px; box-shadow: 0 4px 15px rgba(255,153,51,0.2);">
+        </div>
+        <p id="story-text" style="font-size: 1.2rem; line-height: 1.6; min-height: 150px;">
+            <!-- Text will be typed here by JS -->
+        </p>
+    </section>
+
+    <!-- Map Section -->
+    <section class="section">
+        <h2> National Map of Sacrifice</h2>
+        <p>Click a state marker to view martyrs</p>
+        <div id="map" style="height:600px; width:90%; margin:auto; border-radius: 12px;"></div>
+    </section>
+
+    <!-- Search -->
+    <section class="section">
+        <h2>Roll of Honour</h2>
+        <div class="search-container">
+            <input type="text" id="search" placeholder="Search by name or state...">
+            <button id="refresh-btn" title="Reset Search">🔄</button>
+        </div>
+        <div id="scroll-behavior">
+
+
+            <div class="card">ASI Mohan Lal – Uttarakhand</div>
+            <div class="card">HC Naseer Ahmed – Jammu & Kashmir</div>
+            <div class="card">HC Jaimal Singh – Punjab</div>
+            <div class="card">HC Sukhjinder Singh – Punjab</div>
+            <div class="card">HC Tilak Raj – Himachal Pradesh</div>
+            <div class="card">HC Rohtash Lamba – Rajasthan</div>
+            <div class="card">HC Vijay Soreng – Jharkhand</div>
+            <div class="card">HC V.V. Vasantha Kumar – Kerala</div>
+            <div class="card">HC Subramanian G. – Tamil Nadu</div>
+            <div class="card">HC Maneswar Basumatary – Assam</div>
+            <div class="card">HC Bablu Santra – West Bengal</div>
+            <div class="card">HC Sanjay Kumar Sinha – Bihar</div>
+            <div class="card">HC Ram Vakeel – Uttar Pradesh</div>
+            <div class="card">HC Awadhesh Kumar Yadav – Uttar Pradesh</div>
+            <div class="card">HC Sanjay Rajput – Maharashtra</div>
+            <div class="card">HC Narayan Lal Gurjar – Rajasthan</div>
+            <div class="card">HC Prasanna Kumar Sahoo – Odisha</div>
+            <div class="card">Nitin Shivaji Rathod – Maharashtra</div>
+            <div class="card">Virendra Singh – Uttarakhand</div>
+            <div class="card">Ajit Kumar Azad – Uttar Pradesh</div>
+            <div class="card">Pradeep Kumar – Uttar Pradesh</div>
+            <div class="card">Shyam Babu – Uttar Pradesh</div>
+            <div class="card">Ramesh Yadav – Uttar Pradesh</div>
+            <div class="card">Kaushal Kumar Rawat – Uttar Pradesh</div>
+            <div class="card">Pradeep Singh – Uttar Pradesh</div>
+            <div class="card">Amit Kumar – Uttar Pradesh</div>
+            <div class="card">Vijay Kumar Maurya – Uttar Pradesh</div>
+            <div class="card">Maninder Singh Attri – Punjab</div>
+            <div class="card">Kulwinder Singh – Punjab</div>
+            <div class="card">Ashwini Kumar Kachhi – Madhya Pradesh</div>
+            <div class="card">Ratan Kumar Thakur – Bihar</div>
+            <div class="card">Bhagirath Singh – Rajasthan</div>
+            <div class="card">Hemraj Meena – Rajasthan</div>
+            <div class="card">Jeet Ram – Rajasthan</div>
+            <div class="card">Sudip Biswas – West Bengal</div>
+            <div class="card">Sivachandran C. – Tamil Nadu</div>
+            <div class="card">Manoj Kumar Behera – Odisha</div>
+            <div class="card">H. Guru – Karnataka</div>
+            <div class="card">Mahesh Kumar – Uttar Pradesh</div>
+
+        </div>
+    </section>
+
+    <!-- Ending -->
+    <section class="section" id="ending">
+
+        <span class="shining-text">" JAI HIND "</span>
+    </section>
+
+    <!-- Video Tribute Section (At the end) -->
+    <!-- Video Tribute Section (At the end) -->
+    <section class="video-hero">
+        <video id="tribute-video" autoplay muted loop playsinline class="bg-video" controls>
+            <source src="pulwama_video%20(2).mp4" type="video/mp4">
+        </video>
+    </section>
+
+    <footer>
+        Digital Tribute by Madan Kumar
+    </footer>
+
+    <script>
+
+        /* Audio Control Script */
+        const bgm = document.getElementById('bgm');
+        const audioBtn = document.getElementById('audio-control');
+        let isPlaying = false; // Will check actual state
+
+        function updateAudioState() {
+            if (!bgm.paused) {
+                isPlaying = true;
+                audioBtn.innerHTML = '🔊 Stop Tribute';
+            } else {
+                isPlaying = false;
+                audioBtn.innerHTML = '🔇 Play Tribute';
+            }
+        }
+
+        // Try to unlock audio on first interaction
+        function unlockAudio() {
+            if (bgm.paused) {
+                bgm.play().then(() => {
+                    updateAudioState();
+                    // Remove listeners once unlocked
+                    document.removeEventListener('click', unlockAudio);
+                    document.removeEventListener('scroll', unlockAudio);
+                    document.removeEventListener('keydown', unlockAudio);
+                }).catch(e => console.log("Audio unlock waiting for interaction"));
+            }
+        }
+
+        document.addEventListener('click', unlockAudio);
+        document.addEventListener('scroll', unlockAudio);
+        document.addEventListener('keydown', unlockAudio);
+
+        audioBtn.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent triggering unlockAudio logic duplicately
+            if (!bgm.paused) {
+                bgm.pause();
+            } else {
+                bgm.play();
+            }
+            updateAudioState();
+        });
+
+        /* Try auto-play on load */
+        window.addEventListener('load', () => {
+            bgm.play().then(() => {
+                updateAudioState();
+            }).catch(() => {
+                console.log("Autoplay blocked. Waiting for user interaction.");
+                updateAudioState(); // Ensure button shows correct state (likely muted/off)
+            });
+        });
+
+        /* Video Control Script */
+        /* Native controls enabled on video element */
+
+        /* Story Typewriter Effect (Texting Animation) */
+        const storyTextContent = `On 14 February 2019, the nation witnessed one of its darkest days when 40 brave personnel of the Central Reserve Police Force lost their lives in a terrorist attack in Pulwama, Jammu & Kashmir. They were sons, brothers, fathers, and heroes who stood in service of the country with courage and dedication. Their sacrifice is a solemn reminder of the price paid to protect the nation’s unity and security.
+
+India bows its head in respect and gratitude.
+Their memory lives on in the hearts of millions. 🇮🇳`;
+
+        const storyElement = document.getElementById('story-text');
+        let storyIndex = 0;
+        let storyTyped = false;
+
+        function typeStory() {
+            if (storyIndex < storyTextContent.length) {
+                // handle newlines
+                if (storyTextContent.charAt(storyIndex) === '\n') {
+                    storyElement.innerHTML += '<br>';
+                } else {
+                    storyElement.innerHTML += storyTextContent.charAt(storyIndex);
+                }
+                storyIndex++;
+                setTimeout(typeStory, 30); // Typing speed
+            } else {
+                storyElement.style.borderRight = 'none'; // Remove cursor when done
+            }
+        }
+
+        // Observer for story section
+        const storyObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting && !storyTyped) {
+                    storyTyped = true;
+                    typeStory();
+                }
+            });
+        });
+        storyObserver.observe(storyElement);
+
+        /* Try auto-play on load (often blocked, but worth a try with catch) */
+        window.addEventListener('load', () => {
+            bgm.play().then(() => {
+                isPlaying = true;
+                audioBtn.innerHTML = '🔊 Stop Tribute';
+            }).catch(() => {
+                // Auto-play was prevented
+                console.log("Autoplay prevented. User interaction required.");
+            });
+        });
+
+        /* Scroll Reveal */
+        window.addEventListener("scroll", () => {
+            document.querySelectorAll(".section").forEach(sec => {
+                if (sec.getBoundingClientRect().top < window.innerHeight - 100) {
+                    sec.classList.add("visible");
+                }
+            });
+        });
+
+        /* Animated Counter */
+        let count = 0;
+        let target = 40;
+        let counter = document.getElementById("count");
+        let hasCounted = false; // Prevent re-running
+
+        const startCounter = () => {
+            if (hasCounted) return;
+            hasCounted = true;
+            let interval = setInterval(() => {
+                count++;
+                counter.innerText = count;
+                if (count >= target) {
+                    clearInterval(interval);
+                }
+            }, 60);
+        };
+
+        // Trigger counter when visible
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    startCounter();
+                }
+            });
+        });
+        observer.observe(document.querySelector('#count'));
+
+
+        /* Search */
+        document.getElementById("search").addEventListener("keyup", function () {
+            let filter = this.value.toLowerCase();
+            let cards = document.querySelectorAll(".card");
+            cards.forEach(card => {
+                let text = card.textContent.toLowerCase();
+                // When using grid, we toggle display none/block on the card item itself
+                card.style.display = text.includes(filter) ? "flex" : "none"; // flex to match new display style
+            });
+        });
+
+        /* Refresh / Reset Button */
+        document.getElementById("refresh-btn").addEventListener("click", function () {
+            document.getElementById("search").value = "";
+            let cards = document.querySelectorAll(".card");
+            cards.forEach(card => {
+                card.style.display = "flex";
+            });
+            // Reset map view to India
+            if (window.map) {
+                window.map.setView([22.9734, 78.6569], 5);
+            }
+        });
+
+
+
+        // Initialize map
+        var map = L.map('map').setView([22.9734, 78.6569], 5);
+        window.map = map;
+
+        // Dark tiles for memorial feel
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap contributors'
+        }).addTo(map);
+
+        // Marker Cluster Group
+        var markers = L.markerClusterGroup();
+
+        // Martyr Data
+        var martyrs = [
+            { name: "ASI Mohan Lal", state: "Uttarakhand", coords: [30.0668, 79.0193] },
+            { name: "HC Naseer Ahmed", state: "Jammu & Kashmir", coords: [33.7782, 76.5762] },
+            { name: "HC Jaimal Singh", state: "Punjab", coords: [31.1471, 75.3412] },
+            { name: "HC Sukhjinder Singh", state: "Punjab", coords: [31.1471, 75.3412] },
+            { name: "HC Tilak Raj", state: "Himachal Pradesh", coords: [31.1048, 77.1734] },
+            { name: "HC Rohtash Lamba", state: "Rajasthan", coords: [27.0238, 74.2179] },
+            { name: "HC Vijay Soreng", state: "Jharkhand", coords: [23.6102, 85.2799] },
+            { name: "HC V.V. Vasantha Kumar", state: "Kerala", coords: [10.8505, 76.2711] },
+            { name: "HC Subramanian G.", state: "Tamil Nadu", coords: [11.1271, 78.6569] },
+            { name: "HC Maneswar Basumatary", state: "Assam", coords: [26.2006, 92.9376] },
+            { name: "HC Bablu Santra", state: "West Bengal", coords: [22.9868, 87.8550] },
+            { name: "HC Sanjay Kumar Sinha", state: "Bihar", coords: [25.0961, 85.3131] },
+            { name: "HC Ram Vakeel", state: "Uttar Pradesh", coords: [26.8467, 80.9462] },
+            { name: "HC Awadhesh Kumar Yadav", state: "Uttar Pradesh", coords: [26.8467, 80.9462] },
+            { name: "HC Sanjay Rajput", state: "Maharashtra", coords: [19.7515, 75.7139] },
+            { name: "HC Narayan Lal Gurjar", state: "Rajasthan", coords: [27.0238, 74.2179] },
+            { name: "HC Prasanna Kumar Sahoo", state: "Odisha", coords: [20.9517, 85.0985] },
+            { name: "H. Guru", state: "Karnataka", coords: [15.3173, 75.7139] }
+        ];
+
+        // Count martyrs per state
+        var stateCount = {};
+        martyrs.forEach(m => {
+            stateCount[m.state] = (stateCount[m.state] || 0) + 1;
+        });
+
+        // Add markers
+        martyrs.forEach(function (m) {
+
+            var icon = L.divIcon({
+                className: 'custom-marker'
+            });
+
+            var marker = L.marker(m.coords, { icon: icon })
+                .bindPopup("<b>" + m.name + "</b><br>" + m.state);
+
+            marker.on('click', function () {
+                filterHonourWall(m.state);
+            });
+
+            markers.addLayer(marker);
+        });
+
+        map.addLayer(markers);
+
+        // Honour wall filter
+        function filterHonourWall(state) {
+            let cards = document.querySelectorAll(".card");
+            cards.forEach(card => {
+                if (card.textContent.includes(state)) {
+                    card.style.display = "flex"; // Changed to flex to match grid layout
+                } else {
+                    card.style.display = "none";
+                }
+            });
+            // Scroll to Roll of Honour
+            document.getElementById('search').scrollIntoView({ behavior: 'smooth' });
+        }
+    </script>
+    <script>
+        document.addEventListener("touchstart", function () { }, true);
+        window.addEventListener("resize", function () {
+            document.body.style.height = window.innerHeight + "px";
+        });
+    </script>
+</body>
+
+</html>
