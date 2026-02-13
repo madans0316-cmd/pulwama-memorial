@@ -189,27 +189,6 @@
         }
 
         /* Hero Section adjustments */
-        /* Audio Control Button */
-        #audio-control {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            z-index: 1000;
-            background: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.4);
-            color: white;
-            padding: 10px 15px;
-            border-radius: 50px;
-            cursor: pointer;
-            backdrop-filter: blur(5px);
-            font-size: 14px;
-            transition: all 0.3s ease;
-        }
-
-        #audio-control:hover {
-            background: rgba(255, 255, 255, 0.4);
-        }
-
         .hero {
             height: 100vh;
             display: flex;
@@ -504,21 +483,30 @@
         }
 
         /* Video Hero (User Requested) */
+        /* Video Hero (Refactored for Responsive Playback) */
         .video-hero {
             position: relative;
             width: 100%;
-            height: 100vh;
-            overflow: hidden;
+            background: black;
+            padding: 40px 0;
+            /* Space for cinematic feel */
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         .bg-video {
-            position: absolute;
-            top: 0;
-            left: 0;
+            position: relative;
+            /* Changed from absolute to flow naturally */
             width: 100%;
-            height: 100%;
-            object-fit: cover;
-            /* z-index removed to ensure visibility */
+            max-width: 1000px;
+            /* Prevent it from being too huge on big screens */
+            height: auto;
+            /* Maintain Aspect Ratio! */
+            object-fit: contain;
+            /* Ensure full video is seen */
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
         }
 
         .video-overlay {
@@ -582,9 +570,10 @@
             }
 
             video {
-                object-fit: cover;
                 width: 100%;
-                height: 100vh;
+                height: auto;
+                /* Fix for mobile: don't force 100vh */
+                object-fit: contain;
             }
 
             .video-overlay h1 {
@@ -627,7 +616,6 @@
 <body>
 
     <audio id="bgm" src="audio.mp3" loop autoplay></audio>
-    <button id="audio-control">🔊 Stop Tribute</button>
 
     <!-- Hero -->
     <section class="section visible hero">
@@ -751,26 +739,13 @@
 
     <script>
 
-        /* Audio Control Script */
+        /* Audio Auto-play Script */
         const bgm = document.getElementById('bgm');
-        const audioBtn = document.getElementById('audio-control');
-        let isPlaying = false; // Will check actual state
-
-        function updateAudioState() {
-            if (!bgm.paused) {
-                isPlaying = true;
-                audioBtn.innerHTML = '🔊 Stop Tribute';
-            } else {
-                isPlaying = false;
-                audioBtn.innerHTML = '🔇 Play Tribute';
-            }
-        }
 
         // Try to unlock audio on first interaction
         function unlockAudio() {
             if (bgm.paused) {
                 bgm.play().then(() => {
-                    updateAudioState();
                     // Remove listeners once unlocked
                     document.removeEventListener('click', unlockAudio);
                     document.removeEventListener('scroll', unlockAudio);
@@ -783,23 +758,10 @@
         document.addEventListener('scroll', unlockAudio);
         document.addEventListener('keydown', unlockAudio);
 
-        audioBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Prevent triggering unlockAudio logic duplicately
-            if (!bgm.paused) {
-                bgm.pause();
-            } else {
-                bgm.play();
-            }
-            updateAudioState();
-        });
-
         /* Try auto-play on load */
         window.addEventListener('load', () => {
-            bgm.play().then(() => {
-                updateAudioState();
-            }).catch(() => {
+            bgm.play().catch(() => {
                 console.log("Autoplay blocked. Waiting for user interaction.");
-                updateAudioState(); // Ensure button shows correct state (likely muted/off)
             });
         });
 
