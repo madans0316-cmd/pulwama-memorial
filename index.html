@@ -546,7 +546,6 @@
                 padding: 20px;
                 text-align: center;
                 background-attachment: scroll !important;
-                /* Keep the jitter fix */
             }
 
             .hero h1 {
@@ -559,6 +558,14 @@
 
             .section {
                 padding: 40px 15px;
+                opacity: 1 !important;
+                /* Ensure sections are visible on mobile */
+                transform: translateY(0) !important;
+            }
+
+            .counter {
+                font-size: 60px;
+                /* Smaller on mobile but still visible */
             }
 
             .card {
@@ -576,7 +583,6 @@
             video {
                 width: 100%;
                 height: auto;
-                /* Fix for mobile: don't force 100vh */
                 object-fit: contain;
             }
 
@@ -586,11 +592,6 @@
 
             .video-overlay p {
                 font-size: 16px;
-            }
-
-            /* Fix mobile scroll jitter */
-            .hero {
-                background-attachment: scroll !important;
             }
         }
 
@@ -743,31 +744,47 @@
 
     <script>
 
-        /* Audio Auto-play Script */
+        /* Audio Auto-play Script - Enhanced for Mobile */
         const bgm = document.getElementById('bgm');
+        let audioUnlocked = false;
 
         // Try to unlock audio on first interaction
         function unlockAudio() {
-            if (bgm.paused) {
+            if (!audioUnlocked && bgm.paused) {
                 bgm.play().then(() => {
+                    audioUnlocked = true;
+                    console.log("Audio started playing");
                     // Remove listeners once unlocked
                     document.removeEventListener('click', unlockAudio);
+                    document.removeEventListener('touchstart', unlockAudio);
                     document.removeEventListener('scroll', unlockAudio);
                     document.removeEventListener('keydown', unlockAudio);
                 }).catch(e => console.log("Audio unlock waiting for interaction"));
             }
         }
 
+        // Add touchstart for mobile devices
+        document.addEventListener('touchstart', unlockAudio, { passive: true });
         document.addEventListener('click', unlockAudio);
-        document.addEventListener('scroll', unlockAudio);
+        document.addEventListener('scroll', unlockAudio, { passive: true });
         document.addEventListener('keydown', unlockAudio);
 
-        /* Try auto-play on load */
+        /* Try auto-play on load - more aggressive */
         window.addEventListener('load', () => {
-            bgm.play().catch(() => {
+            bgm.play().then(() => {
+                audioUnlocked = true;
+                console.log("Audio auto-played on load");
+            }).catch(() => {
                 console.log("Autoplay blocked. Waiting for user interaction.");
             });
         });
+
+        // Try to play immediately (before load event)
+        setTimeout(() => {
+            if (!audioUnlocked) {
+                bgm.play().catch(() => { });
+            }
+        }, 100);
 
         /* Video Control Script */
         /* Native controls enabled on video element */
