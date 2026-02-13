@@ -636,12 +636,24 @@
 
 <body>
 
-    <audio id="bgm" src="audio.mp3" loop muted autoplay></audio>
+    <audio id="bgm" src="audio.mp3" loop></audio>
 
-    <!-- Tribute Audio Control -->
-    <div id="tribute-audio-control"
-        style="position: fixed; bottom: 30px; right: 30px; z-index: 9999; background: rgba(255, 153, 51, 0.9); padding: 15px 25px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); font-size: 16px; font-weight: bold; color: white; text-align: center; animation: pulse 2s infinite;">
-        🎵 Play Tribute Song
+    <!-- Memorial Entrance Overlay -->
+    <div id="memorial-entrance"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(135deg, rgba(0,0,0,0.95), rgba(20,20,20,0.98)); z-index: 99999; display: flex; flex-direction: column; justify-content: center; align-items: center; backdrop-filter: blur(10px);">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/5/55/Emblem_of_India.svg" alt="Ashoka Emblem"
+            style="width: 120px; opacity: 0.9; margin-bottom: 30px; filter: brightness(0) invert(1);">
+        <h1
+            style="font-size: 2.5rem; margin: 0 0 15px 0; background: linear-gradient(to right, #FF9933, #FFFFFF, #138808); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; text-align: center; padding: 0 20px;">
+            Pulwama Memorial</h1>
+        <p style="font-size: 1.2rem; color: #ccc; margin: 0 0 40px 0; text-align: center; padding: 0 20px;">In memory of
+            40 brave CRPF martyrs</p>
+        <button id="enter-memorial-btn"
+            style="padding: 20px 50px; font-size: 1.3rem; background: linear-gradient(135deg, #FF9933, #ff6600); border: none; border-radius: 50px; color: white; cursor: pointer; font-weight: bold; box-shadow: 0 8px 30px rgba(255, 153, 51, 0.4); transition: all 0.3s; font-family: 'Montserrat', sans-serif;">
+            🕯️ Enter Memorial & Play Tribute
+        </button>
+        <p style="font-size: 0.9rem; color: #888; margin-top: 20px; text-align: center; padding: 0 20px;">14th February
+            2019</p>
     </div>
 
     <!-- Hero -->
@@ -766,29 +778,37 @@
 
     <script>
 
-        /* Tribute Audio Control - Simple and Reliable */
+        /* Memorial Entrance & Tribute Audio */
         const bgm = document.getElementById('bgm');
-        const tributeBtn = document.getElementById('tribute-audio-control');
-        let isPlaying = false;
+        const entranceOverlay = document.getElementById('memorial-entrance');
+        const enterBtn = document.getElementById('enter-memorial-btn');
+        let tributePlaying = false;
 
-        tributeBtn.addEventListener('click', () => {
-            if (!isPlaying) {
-                bgm.muted = false; // Unmute the audio
-                bgm.play().then(() => {
-                    isPlaying = true;
-                    tributeBtn.innerHTML = '🔊 Tribute Playing';
-                    tributeBtn.style.background = 'rgba(19, 136, 8, 0.9)'; // Green when playing
-                    console.log("Tribute song started");
-                }).catch(e => {
-                    console.log("Audio play failed: ", e);
-                    tributeBtn.innerHTML = '❌ Please Tap Again';
-                });
-            } else {
-                bgm.pause();
-                isPlaying = false;
-                tributeBtn.innerHTML = '🎵 Play Tribute Song';
-                tributeBtn.style.background = 'rgba(255, 153, 51, 0.9)'; // Back to orange
-            }
+        // Hover effect for enter button
+        enterBtn.addEventListener('mouseenter', () => {
+            enterBtn.style.transform = 'scale(1.05)';
+            enterBtn.style.boxShadow = '0 12px 40px rgba(255, 153, 51, 0.6)';
+        });
+        enterBtn.addEventListener('mouseleave', () => {
+            enterBtn.style.transform = 'scale(1)';
+            enterBtn.style.boxShadow = '0 8px 30px rgba(255, 153, 51, 0.4)';
+        });
+
+        // Enter memorial and start tribute
+        enterBtn.addEventListener('click', () => {
+            bgm.play().then(() => {
+                tributePlaying = true;
+                // Fade out the entrance overlay
+                entranceOverlay.style.transition = 'opacity 1s ease';
+                entranceOverlay.style.opacity = '0';
+                setTimeout(() => {
+                    entranceOverlay.style.display = 'none';
+                }, 1000);
+                console.log("Memorial entered, tribute playing");
+            }).catch(e => {
+                console.log("Audio play failed: ", e);
+                alert("Unable to play tribute audio. Please check your browser settings.");
+            });
         });
 
         /* Video Control Script */
