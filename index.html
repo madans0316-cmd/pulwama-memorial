@@ -617,12 +617,32 @@
         .video-control-btn:hover {
             background: rgba(0, 0, 0, 0.8);
         }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+            }
+
+            50% {
+                transform: scale(1.05);
+                box-shadow: 0 6px 25px rgba(255, 153, 51, 0.6);
+            }
+        }
     </style>
 </head>
 
 <body>
 
-    <audio id="bgm" src="audio.mp3" loop autoplay></audio>
+    <audio id="bgm" src="audio.mp3" loop muted autoplay></audio>
+
+    <!-- Tribute Audio Control -->
+    <div id="tribute-audio-control"
+        style="position: fixed; bottom: 30px; right: 30px; z-index: 9999; background: rgba(255, 153, 51, 0.9); padding: 15px 25px; border-radius: 50px; cursor: pointer; box-shadow: 0 4px 15px rgba(0,0,0,0.5); backdrop-filter: blur(10px); border: 2px solid rgba(255,255,255,0.3); font-size: 16px; font-weight: bold; color: white; text-align: center; animation: pulse 2s infinite;">
+        🎵 Play Tribute Song
+    </div>
 
     <!-- Hero -->
     <section class="section visible hero">
@@ -746,47 +766,30 @@
 
     <script>
 
-        /* Audio Auto-play Script - Enhanced for Mobile */
+        /* Tribute Audio Control - Simple and Reliable */
         const bgm = document.getElementById('bgm');
-        let audioUnlocked = false;
+        const tributeBtn = document.getElementById('tribute-audio-control');
+        let isPlaying = false;
 
-        // Try to unlock audio on first interaction
-        function unlockAudio() {
-            if (!audioUnlocked && bgm.paused) {
+        tributeBtn.addEventListener('click', () => {
+            if (!isPlaying) {
+                bgm.muted = false; // Unmute the audio
                 bgm.play().then(() => {
-                    audioUnlocked = true;
-                    console.log("Audio started playing");
-                    // Remove listeners once unlocked
-                    document.removeEventListener('click', unlockAudio);
-                    document.removeEventListener('touchstart', unlockAudio);
-                    document.removeEventListener('scroll', unlockAudio);
-                    document.removeEventListener('keydown', unlockAudio);
-                }).catch(e => console.log("Audio unlock waiting for interaction"));
+                    isPlaying = true;
+                    tributeBtn.innerHTML = '🔊 Tribute Playing';
+                    tributeBtn.style.background = 'rgba(19, 136, 8, 0.9)'; // Green when playing
+                    console.log("Tribute song started");
+                }).catch(e => {
+                    console.log("Audio play failed: ", e);
+                    tributeBtn.innerHTML = '❌ Please Tap Again';
+                });
+            } else {
+                bgm.pause();
+                isPlaying = false;
+                tributeBtn.innerHTML = '🎵 Play Tribute Song';
+                tributeBtn.style.background = 'rgba(255, 153, 51, 0.9)'; // Back to orange
             }
-        }
-
-        // Add touchstart for mobile devices
-        document.addEventListener('touchstart', unlockAudio, { passive: true });
-        document.addEventListener('click', unlockAudio);
-        document.addEventListener('scroll', unlockAudio, { passive: true });
-        document.addEventListener('keydown', unlockAudio);
-
-        /* Try auto-play on load - more aggressive */
-        window.addEventListener('load', () => {
-            bgm.play().then(() => {
-                audioUnlocked = true;
-                console.log("Audio auto-played on load");
-            }).catch(() => {
-                console.log("Autoplay blocked. Waiting for user interaction.");
-            });
         });
-
-        // Try to play immediately (before load event)
-        setTimeout(() => {
-            if (!audioUnlocked) {
-                bgm.play().catch(() => { });
-            }
-        }, 100);
 
         /* Video Control Script */
         /* Native controls enabled on video element */
